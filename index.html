@@ -34,6 +34,26 @@
 		align-items: center;
 	}
 
+	.drag-drop-box {
+		width: 100%;
+		height: 200px;
+		border: 2px dashed #5D6D7E;
+		border-radius: 10px;
+		margin-bottom: 20px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		cursor: pointer;
+	}
+
+	.drag-drop-box:hover {
+		background-color: #445662;
+	}
+
+	.drag-drop-box p {
+		margin: 0;
+	}
+
 	.file-input {
 		display: none;
 	}
@@ -91,31 +111,15 @@
 			opacity: 1;
 		}
 	}
-
-	.drop-area {
-		width: 100%;
-		min-height: 150px;
-		border: 2px dashed #5D6D7E;
-		border-radius: 10px;
-		margin-top: 20px;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-
-	.drop-text {
-		color: #5D6D7E;
-	}
 </style>
 </head>
 <body onload="fadeIn()">
 	<div class="card file-upload-container">
 		<h2>Cat Litter</h2>
-		<div class="drop-area" id="dropArea" ondragover="dragOver(event)" ondrop="drop(event)">
-			<p class="drop-text">Drag and drop files here</p>
+		<div class="drag-drop-box" id="dragDropBox" onclick="fileInput.click()">
+			<p>Drag & Drop files here or click to select</p>
 		</div>
-		<label for="fileInput" class="upload-button">Choose File</label>
-		<input type="file" id="fileInput" class="file-input">
+		<input type="file" id="fileInput" class="file-input" style="display: none;">
 	
 		<div class="progress" id="progressBarContainer">
 			<div class="progress-bar" id="progressBar">0%</div>
@@ -132,52 +136,37 @@
 	</div>
 
 	<script>
-		const dropArea = document.getElementById('dropArea');
+		const dragDropBox = document.getElementById('dragDropBox');
+		const fileInput = document.getElementById('fileInput');
+		const progressBar = document.getElementById('progressBar');
+		const progressBarContainer = document.getElementById('progressBarContainer');
+		const statusMessage = document.getElementById('status');
+		const fileList = document.getElementById('fileList');
 
-		// Prevent default drag behaviors
-		['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-			dropArea.addEventListener(eventName, preventDefaults, false);
+		dragDropBox.addEventListener('dragover', (e) => {
+			e.preventDefault();
+			dragDropBox.classList.add('drag-over');
 		});
 
-		// Highlight drop area when item is dragged over it
-		['dragenter', 'dragover'].forEach(eventName => {
-			dropArea.addEventListener(eventName, highlight, false);
+		dragDropBox.addEventListener('dragleave', () => {
+			dragDropBox.classList.remove('drag-over');
 		});
 
-		// Remove highlight when item is dragged out of drop area
-		['dragleave', 'drop'].forEach(eventName => {
-			dropArea.addEventListener(eventName, unhighlight, false);
+		dragDropBox.addEventListener('drop', (e) => {
+			e.preventDefault();
+			dragDropBox.classList.remove('drag-over');
+			const file = e.dataTransfer.files[0];
+			fileInput.files = e.dataTransfer.files;
+			handleFileUpload(file);
 		});
 
-		// Handle dropped files
-		dropArea.addEventListener('drop', handleDrop, false);
+		fileInput.addEventListener('change', () => {
+			const file = fileInput.files[0];
+			handleFileUpload(file);
+		});
 
-		function preventDefaults(event) {
-			event.preventDefault();
-			event.stopPropagation();
-		}
-
-		function highlight() {
-			dropArea.classList.add('highlight');
-		}
-
-		function unhighlight() {
-			dropArea.classList.remove('highlight');
-		}
-
-		function handleDrop(event) {
-			const dt = event.dataTransfer;
-			const files = dt.files;
-
-			handleFiles(files);
-		}
-
-		function handleFiles(files) {
-			// Reset UI
-			resetUploadUI();
-
-			// Upload each file
-			for (const file of files) {
+		function handleFileUpload(file) {
+			if (file) {
 				uploadFile(file);
 			}
 		}
@@ -219,6 +208,7 @@
 		}
 
 		function resetUploadUI() {
+			fileInput.value = '';
 			progressBar.style.width = '0%';
 			progressBar.innerHTML = '0%';
 			progressBarContainer.style.display = 'none'; // Hide progress bar
