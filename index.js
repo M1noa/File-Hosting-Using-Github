@@ -13,7 +13,7 @@ const octokit = new Octokit({ auth: process.env.GITHUB_API_KEY });
 const storage = multer.memoryStorage();
 const upload = multer({
 	storage: storage,
-	limits: { fileSize: 2500000 } // 2.5MB file size limit
+	limits: {}
 });
 
 // Upload API endpoint
