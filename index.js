@@ -22,10 +22,6 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 		return res.status(400).send('No file uploaded.');
 	}
 
-	if (req.file.size > 2500000) {
-		return res.status(400).send('File size exceeds limit (2.5MB).');
-	}
-
 	const randomFilename = crypto.randomBytes(5).toString('hex'); // Generate random filename
 	const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
 	const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
