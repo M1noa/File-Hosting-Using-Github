@@ -63,8 +63,8 @@
 	}
 
 	.progress-bar {
-		width: 0%;
-		height: 75%;
+		width: 75%;
+		height: 100%;
 		background-color: #B0E9D8;
 		border-radius: 8px;
 		text-align: center;
@@ -91,11 +91,29 @@
 			opacity: 1;
 		}
 	}
+
+	.drop-area {
+		width: 100%;
+		min-height: 150px;
+		border: 2px dashed #5D6D7E;
+		border-radius: 10px;
+		margin-top: 20px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.drop-text {
+		color: #5D6D7E;
+	}
 </style>
 </head>
 <body onload="fadeIn()">
 	<div class="card file-upload-container">
 		<h2>Cat Litter</h2>
+		<div class="drop-area" id="dropArea" ondragover="dragOver(event)" ondrop="drop(event)">
+			<p class="drop-text">Drag and drop files here</p>
+		</div>
 		<label for="fileInput" class="upload-button">Choose File</label>
 		<input type="file" id="fileInput" class="file-input">
 	
@@ -114,22 +132,57 @@
 	</div>
 
 	<script>
-		const fileInput = document.getElementById('fileInput');
-		const progressBar = document.getElementById('progressBar');
-		const progressBarContainer = document.getElementById('progressBarContainer');
-		const statusMessage = document.getElementById('status');
-		const fileList = document.getElementById('fileList');
+		const dropArea = document.getElementById('dropArea');
 
-		fileInput.addEventListener('change', () => {
-			if (fileInput.files.length > 0) {
-				uploadFile();
-			} else {
-				resetUploadUI();
-			}
+		// Prevent default drag behaviors
+		['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+			dropArea.addEventListener(eventName, preventDefaults, false);
 		});
 
-		function uploadFile() {
-			const file = fileInput.files[0];
+		// Highlight drop area when item is dragged over it
+		['dragenter', 'dragover'].forEach(eventName => {
+			dropArea.addEventListener(eventName, highlight, false);
+		});
+
+		// Remove highlight when item is dragged out of drop area
+		['dragleave', 'drop'].forEach(eventName => {
+			dropArea.addEventListener(eventName, unhighlight, false);
+		});
+
+		// Handle dropped files
+		dropArea.addEventListener('drop', handleDrop, false);
+
+		function preventDefaults(event) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
+
+		function highlight() {
+			dropArea.classList.add('highlight');
+		}
+
+		function unhighlight() {
+			dropArea.classList.remove('highlight');
+		}
+
+		function handleDrop(event) {
+			const dt = event.dataTransfer;
+			const files = dt.files;
+
+			handleFiles(files);
+		}
+
+		function handleFiles(files) {
+			// Reset UI
+			resetUploadUI();
+
+			// Upload each file
+			for (const file of files) {
+				uploadFile(file);
+			}
+		}
+
+		function uploadFile(file) {
 			const formData = new FormData();
 			formData.append('file', file);
 
@@ -166,7 +219,6 @@
 		}
 
 		function resetUploadUI() {
-			fileInput.value = '';
 			progressBar.style.width = '0%';
 			progressBar.innerHTML = '0%';
 			progressBarContainer.style.display = 'none'; // Hide progress bar
