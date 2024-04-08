@@ -108,6 +108,9 @@ app.get('/api/files', async (req, res) => {
 app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/index.html');
 });
+app.get('/favicon.ico', (req, res) => {
+	res.sendFile(__dirname + '/favicon.ico');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
