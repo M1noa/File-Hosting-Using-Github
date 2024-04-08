@@ -32,7 +32,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 	const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
 
 	try {
-		await octokit.repots({
+		await octokit.repos.createOrUpdateFileContents({
 			owner: 'M1noa',
 			repo: 'files',
 			path: sanitizedFilename, // Use sanitized filename
@@ -46,8 +46,6 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 		res.status(500).send('Error uploading file to GitHub.');
 	}
 });
-
-
 
 app.get('/api/view/:filename', async (req, res) => {
 	const filename = req.params.filename;
