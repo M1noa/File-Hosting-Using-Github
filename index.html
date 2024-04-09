@@ -59,17 +59,12 @@
 	}
 
 	.upload-button {
-		background-color: #5D6D7E;
-		color: #EDEDED;
-		padding: 10px 20px;
-		border: none;
-		border-radius: 5px;
-		cursor: pointer;
-		transition: background-color 0.3s ease;
-	}
-
-	.upload-button:hover {
-		background-color: #445662;
+			color: #EDEDED;
+			border: none;
+			border-radius: 3px;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+			text-decoration: none; /* Remove underline */
 	}
 
 	.progress {
@@ -116,33 +111,25 @@
 <body onload="fadeIn()">
 	<div class="card file-upload-container">
 		<h2>Cat Litter</h2>
-		<div class="drag-drop-box" id="dragDropBox">
+		<div class="drag-drop-box" id="dragDropBox" onclick="fileInput.click()">
 			<p>Drag & Drop files here or click to select</p>
 		</div>
-		<input type="file" id="fileInput" class="file-input" style="display: none;">
+		<input type="file" id="fileInput" class="file-input" style="display: none;" multiple>
 	
-		<div class="progress" id="progressBarContainer">
-			<div class="progress-bar" id="progressBar">0%</div>
+		<div class="progress" id="progressBarContainer" style="display: none;">
+			<div class="progress-bar" id="progressBar"></div>
 		</div>
+		<ul id="fileList">
+		</ul>
 	
 		<p class="status" id="status"></p>
-	</div>
-
-	<div class="card file-list">
-		<h2>Files</h2>
-		<ul id="fileList">
-			<!-- Files will be dynamically added here -->
-		</ul>
 	</div>
 
 	<script>
 		const dragDropBox = document.getElementById('dragDropBox');
 		const fileInput = document.getElementById('fileInput');
-		const progressBar = document.getElementById('progressBar');
 		const progressBarContainer = document.getElementById('progressBarContainer');
-		const statusMessage = document.getElementById('status');
 		const fileList = document.getElementById('fileList');
-		const uploadedFiles = []; // Array to store uploaded file names
 
 		dragDropBox.addEventListener('dragover', (e) => {
 			e.preventDefault();
@@ -157,18 +144,19 @@
 			e.preventDefault();
 			dragDropBox.classList.remove('drag-over');
 			const files = e.dataTransfer.files;
-			handleFileUpload(files);
+			handleFiles(files);
 		});
 
 		fileInput.addEventListener('change', () => {
 			const files = fileInput.files;
-			handleFileUpload(files);
+			handleFiles(files);
 		});
 
-		function handleFileUpload(files) {
-			for (let i = 0; i < files.length; i++) {
-				const file = files[i];
-				uploadFile(file);
+		function handleFiles(files) {
+			if (files && files.length > 0) {
+				Array.from(files).forEach(file => {
+					uploadFile(file);
+				});
 			}
 		}
 
@@ -192,62 +180,25 @@
 					if (xhr.status === 200) {
 						const filename = xhr.responseText;
 						const encodedFilename = encodeURIComponent(filename); // Encode filename
-						statusMessage.innerHTML = `File uploaded successfully. You can view it <a href="/api/view/${encodedFilename}" onclick="hideStatus()">here</a>.`;
-						statusMessage.style.opacity = '1'; // Show status message
-						uploadedFiles.push(filename); // Add filename to uploaded files list
-						updateFileList(); // Update file list
+						const listItem = document.createElement('li');
+						const link = document.createElement('a');
+						link.href = `/api/view/${encodedFilename}`;
+						link.textContent = file.name;
+						listItem.appendChild(link);
+						fileList.appendChild(listItem);
+						progressBarContainer.style.display = 'none'; // Hide progress bar
 					} else {
-						statusMessage.innerHTML = 'Error uploading file: ' + xhr.responseText;
-						statusMessage.style.opacity = '1'; // Show status message
+						console.error('Error uploading file:', xhr.responseText);
 					}
 				}
 			};
 
 			xhr.send(formData);
 		}
-		
-		function hideStatus() {
-			resetUploadUI();
-		}
-
-		function resetUploadUI() {
-			fileInput.value = '';
-			progressBar.style.width = '0%';
-			progressBar.innerHTML = '0%';
-			progressBarContainer.style.display = 'none'; // Hide progress bar
-			statusMessage.style.opacity = '0'; // Hide status message
-		}
-
-		function fadeIn() {
-			fileList.style.opacity = '1'; // Show file list
-
-			// Fetch the file list from the API
-			fetch('/api/files')
-				.then(response => response.json())
-				.then(files => {
-					files.forEach(file => {
-						uploadedFiles.push(file.name); // Add filename to uploaded files list
-					});
-					updateFileList(); // Update file list
-				})
-				.catch(error => console.error('Error fetching file list:', error));
-		}
-
-		function updateFileList() {
-			// Clear previous file list
-			fileList.innerHTML = '';
-
-			// Add uploaded files to the file list
-			uploadedFiles.forEach(filename => {
-				const listItem = document.createElement('li');
-				const link = document.createElement('a');
-				const encodedFilename = encodeURIComponent(filename); // Encode filename
-				link.href = `/api/view/${encodedFilename}`;
-				link.textContent = filename;
-				listItem.appendChild(link);
-				fileList.appendChild(listItem);
-			});
-		}
 	</script>
 </body>
+	<div style="margin-bottom: 10px;">
+		<a href="https://github.com/M1noa/File-Hosting-Using-Github/" class="upload-button" target="_blank">GitHub</a>
+		<a href="/api/Files" class="upload-button">File List</a>
+	</div>
 </html>
