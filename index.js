@@ -22,7 +22,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 				return res.status(400).send('No file uploaded.');
 		}
 
-		const randomFilename = crypto.randomBytes(5).toString('hex'); // Generate random filename
+		const randomFilename = crypto.randomBytes(10).toString('hex'); // Generate random filename
 		const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
 		const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
 		const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
@@ -36,8 +36,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 						content: req.file.buffer.toString('base64')
 				};
 
-				// Add Accept header if file size exceeds 1MB
-				if (req.file.size > 1000000) {
+				if (req.file.size > 100000) {
 						requestOptions.headers = {
 								'Accept': 'application/vnd.github.v3.raw'
 						};
