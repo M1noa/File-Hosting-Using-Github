@@ -18,29 +18,38 @@ const upload = multer({
 
 // Upload API endpoint
 app.post('/api/upload', upload.single('file'), async (req, res) => {
-	if (!req.file) {
-		return res.status(400).send('No file uploaded.');
-	}
+    if (!req.file) {
+        return res.status(400).send('No file uploaded.');
+    }
 
-	const randomFilename = crypto.randomBytes(5).toString('hex'); // Generate random filename
-	const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
-	const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
-	const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
+    const randomFilename = crypto.randomBytes(5).toString('hex'); // Generate random filename
+    const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
+    const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
+    const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
 
-	try {
-		await octokit.repos.createOrUpdateFileContents({
-			owner: 'M1noa',
-			repo: 'files',
-			path: sanitizedFilename, // Use sanitized filename
-			message: 'Upload file',
-			content: req.file.buffer.toString('base64')
-		});
+    try {
+        let requestOptions = {
+            owner: 'M1noa',
+            repo: 'files',
+            path: sanitizedFilename, // Use sanitized filename
+            message: 'Upload file',
+            content: req.file.buffer.toString('base64')
+        };
 
-		res.status(200).send(encodedFilename); // Send encoded filename
-	} catch (error) {
-		console.error('Error uploading file to GitHub:', error);
-		res.status(500).send('Error uploading file to GitHub.');
-	}
+        // Add Accept header if file size exceeds 1MB
+        if (req.file.size > 1000000) {
+            requestOptions.headers = {
+                'Accept': 'application/vnd.github.v3.raw'
+            };
+        }
+
+        await octokit.repos.createOrUpdateFileContents(requestOptions);
+
+        res.status(200).send(encodedFilename); // Send encoded filename
+    } catch (error) {
+        console.error('Error uploading file to GitHub:', error);
+        res.status(500).send('Error uploading file to GitHub.');
+    }
 });
 
 app.get('/api/view/:filename', async (req, res) => {
