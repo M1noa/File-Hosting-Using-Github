@@ -1,121 +1,204 @@
-const express = require('express');
-const multer = require('multer');
-const { Octokit } = require('@octokit/rest');
-const crypto = require('crypto');
-const fs = require('fs');
-const axios = require('axios');
-require('dotenv').config();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatLitter.minoa.cat</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap">
+<style>
+	body {
+		font-family: 'Ubuntu Mono', monospace;
+		background-color: #1B2631;
+		color: #EDEDED;
+		padding: 20px;
+	}
 
-const app = express();
-const octokit = new Octokit({ auth: process.env.GITHUB_API_KEY });
+	a {
+		color: #D3B4FF;
+	}
 
-// Multer configuration
-const storage = multer.memoryStorage();
-const upload = multer({
-	storage: storage,
-	limits: {}
-});
 
-// Upload API endpoint
-app.post('/api/upload', upload.single('file'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No file uploaded.');
-    }
+	.card {
+		background-color: #283747;
+		color: #EDEDED;
+		border-radius: 10px;
+		padding: 20px;
+		margin-bottom: 20px;
+		box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+	}
 
-    const randomFilename = crypto.randomBytes(5).toString('hex'); // Generate random filename
-    const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
-    const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
-    const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
+	.file-upload-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
 
-    try {
-        let requestOptions = {
-            owner: 'M1noa',
-            repo: 'files',
-            path: sanitizedFilename, // Use sanitized filename
-            message: 'Upload file',
-            content: req.file.buffer.toString('base64')
-        };
+	.drag-drop-box {
+		width: 100%;
+		height: 200px;
+		border: 2px dashed #5D6D7E;
+		border-radius: 10px;
+		margin-bottom: 20px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		cursor: pointer;
+	}
 
-        // Add Accept header if file size exceeds 1MB
-        if (req.file.size > 1000000) {
-            requestOptions.headers = {
-                'Accept': 'application/vnd.github.v3.raw'
-            };
-        }
+	.drag-drop-box:hover {
+		background-color: #445662;
+	}
 
-        await octokit.repos.createOrUpdateFileContents(requestOptions);
+	.drag-drop-box p {
+		margin: 0;
+	}
 
-        res.status(200).send(encodedFilename); // Send encoded filename
-    } catch (error) {
-        console.error('Error uploading file to GitHub:', error);
-        res.status(500).send('Error uploading file to GitHub.');
-    }
-});
+	.file-input {
+		display: none;
+	}
 
-app.get('/api/view/:filename', async (req, res) => {
-	const filename = req.params.filename;
+	.upload-button {
+			color: #EDEDED;
+			border: none;
+			border-radius: 3px;
+			cursor: pointer;
+			transition: background-color 0.3s ease;
+			text-decoration: none; /* Remove underline */
+	}
 
-	try {
-		// Fetch the raw URL of the file from GitHub
-		const response = await octokit.repos.getContent({
-			owner: 'M1noa',
-			repo: 'files',
-			path: filename
+	.progress {
+		width: 100%;
+		height: 30px;
+		background-color: #333;
+		margin-bottom: 20px;
+		border-radius: 15px;
+		overflow: hidden;
+		display: none; /* Hidden by default */
+	}
+
+	.progress-bar {
+		width: 75%;
+		height: 100%;
+		background-color: #B0E9D8;
+		border-radius: 8px;
+		text-align: center;
+		line-height: 30px;
+		color: #1B2631;
+		transition: width 0.3s ease;
+	}
+
+	.status {
+		margin-top: 20px;
+		opacity: 0; /* Initially hidden */
+		transition: opacity 0.5s ease;
+	}
+
+	.file-list {
+		animation: fadeIn 1s forwards; /* Fade in animation */
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+</style>
+</head>
+<body onload="fadeIn()">
+	<div class="card file-upload-container">
+		<h2>Cat Litter</h2>
+		<div class="drag-drop-box" id="dragDropBox" onclick="fileInput.click()">
+			<p>Drag & Drop files here or click to select</p>
+		</div>
+		<input type="file" id="fileInput" class="file-input" style="display: none;" multiple>
+	
+		<div class="progress" id="progressBarContainer" style="display: none;">
+			<div class="progress-bar" id="progressBar">0%</div>
+		</div>
+		<ul id="fileList">
+		</ul>
+	
+		<p class="status" id="status"></p>
+	</div>
+
+	<script>
+		const dragDropBox = document.getElementById('dragDropBox');
+		const fileInput = document.getElementById('fileInput');
+		const progressBarContainer = document.getElementById('progressBarContainer');
+		const fileList = document.getElementById('fileList');
+
+		dragDropBox.addEventListener('dragover', (e) => {
+			e.preventDefault();
+			dragDropBox.classList.add('drag-over');
 		});
 
-		// Ensure the file is a file and not a directory
-		if (response.data.type !== 'file') {
-			return res.status(400).send('Specified path is not a file.');
+		dragDropBox.addEventListener('dragleave', () => {
+			dragDropBox.classList.remove('drag-over');
+		});
+
+		dragDropBox.addEventListener('drop', (e) => {
+			e.preventDefault();
+			dragDropBox.classList.remove('drag-over');
+			const files = e.dataTransfer.files;
+			handleFiles(files);
+		});
+
+		fileInput.addEventListener('change', () => {
+			const files = fileInput.files;
+			handleFiles(files);
+		});
+
+		function handleFiles(files) {
+			if (files && files.length > 0) {
+				Array.from(files).forEach(file => {
+					uploadFile(file);
+				});
+			}
 		}
 
-		const rawUrl = response.data.download_url;
+		function uploadFile(file) {
+			const formData = new FormData();
+			formData.append('file', file);
 
-		// Fetch the raw file contents
-		const rawResponse = await axios.get(rawUrl, {
-			responseType: 'arraybuffer'
-		});
+			const xhr = new XMLHttpRequest();
+			xhr.open('POST', '/api/upload');
+			xhr.upload.addEventListener('progress', (event) => {
+				if (event.lengthComputable) {
+					const percentComplete = Math.round((event.loaded / event.total) * 100);
+					progressBar.style.width = percentComplete + '%';
+					progressBar.innerHTML = percentComplete + '%';
+					progressBarContainer.style.display = 'block'; // Show progress bar
+				}
+			});
 
-		// Set the appropriate content type
-		const contentType = response.data.type;
-
-		// Send the raw file contents
-		res.set('Content-Type', contentType);
-		res.send(rawResponse.data);
-	} catch (error) {
-		console.error('Error fetching file from GitHub:', error);
-		res.status(500).send('An error occurred');
-	}
-});
-
-app.get('/api/files', async (req, res) => {
-	try {
-		const response = await octokit.rest.repos.getContent({
-			owner: 'M1noa',
-			repo: 'files'
-		});
-
-		const files = response.data.map(file => {
-			return {
-				name: file.name
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						const filename = xhr.responseText;
+						const encodedFilename = encodeURIComponent(filename); // Encode filename
+						const listItem = document.createElement('li');
+						const link = document.createElement('a');
+						link.href = `/api/view/${encodedFilename}`;
+						link.textContent = file.name;
+						listItem.appendChild(link);
+						fileList.appendChild(listItem);
+						progressBarContainer.style.display = 'none'; // Hide progress bar
+					} else {
+						console.error('Error uploading file:', xhr.responseText);
+					}
+				}
 			};
-		});
 
-		res.json(files);
-	} catch (error) {
-		console.error('Error fetching files from GitHub:', error);
-		res.status(500).send('An error occurred');
-	}
-});
-
-
-app.get('/', (req, res) => {
-	res.sendFile(__dirname + '/index.html');
-});
-app.get('/favicon.ico', (req, res) => {
-	res.sendFile(__dirname + '/favicon.ico');
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
-});
+			xhr.send(formData);
+		}
+	</script>
+</body>
+	<div style="margin-bottom: 10px;">
+		<a href="https://github.com/M1noa/File-Hosting-Using-Github/" class="upload-button" target="_blank">GitHub</a>
+		<a href="/api/Files" class="upload-button">File List</a>
+	</div>
+</html>
