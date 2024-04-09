@@ -116,7 +116,7 @@
 <body onload="fadeIn()">
 	<div class="card file-upload-container">
 		<h2>Cat Litter</h2>
-		<div class="drag-drop-box" id="dragDropBox" onclick="fileInput.click()">
+		<div class="drag-drop-box" id="dragDropBox">
 			<p>Drag & Drop files here or click to select</p>
 		</div>
 		<input type="file" id="fileInput" class="file-input" style="display: none;">
@@ -142,6 +142,7 @@
 		const progressBarContainer = document.getElementById('progressBarContainer');
 		const statusMessage = document.getElementById('status');
 		const fileList = document.getElementById('fileList');
+		const uploadedFiles = []; // Array to store uploaded file names
 
 		dragDropBox.addEventListener('dragover', (e) => {
 			e.preventDefault();
@@ -155,18 +156,18 @@
 		dragDropBox.addEventListener('drop', (e) => {
 			e.preventDefault();
 			dragDropBox.classList.remove('drag-over');
-			const file = e.dataTransfer.files[0];
-			fileInput.files = e.dataTransfer.files;
-			handleFileUpload(file);
+			const files = e.dataTransfer.files;
+			handleFileUpload(files);
 		});
 
 		fileInput.addEventListener('change', () => {
-			const file = fileInput.files[0];
-			handleFileUpload(file);
+			const files = fileInput.files;
+			handleFileUpload(files);
 		});
 
-		function handleFileUpload(file) {
-			if (file) {
+		function handleFileUpload(files) {
+			for (let i = 0; i < files.length; i++) {
+				const file = files[i];
 				uploadFile(file);
 			}
 		}
@@ -193,6 +194,8 @@
 						const encodedFilename = encodeURIComponent(filename); // Encode filename
 						statusMessage.innerHTML = `File uploaded successfully. You can view it <a href="/api/view/${encodedFilename}" onclick="hideStatus()">here</a>.`;
 						statusMessage.style.opacity = '1'; // Show status message
+						uploadedFiles.push(filename); // Add filename to uploaded files list
+						updateFileList(); // Update file list
 					} else {
 						statusMessage.innerHTML = 'Error uploading file: ' + xhr.responseText;
 						statusMessage.style.opacity = '1'; // Show status message
@@ -223,16 +226,27 @@
 				.then(response => response.json())
 				.then(files => {
 					files.forEach(file => {
-						const listItem = document.createElement('li');
-						const link = document.createElement('a');
-						const encodedFilename = encodeURIComponent(file.name); // Encode filename
-						link.href = `/api/view/${encodedFilename}`;
-						link.textContent = file.name;
-						listItem.appendChild(link);
-						fileList.appendChild(listItem);
+						uploadedFiles.push(file.name); // Add filename to uploaded files list
 					});
+					updateFileList(); // Update file list
 				})
 				.catch(error => console.error('Error fetching file list:', error));
+		}
+
+		function updateFileList() {
+			// Clear previous file list
+			fileList.innerHTML = '';
+
+			// Add uploaded files to the file list
+			uploadedFiles.forEach(filename => {
+				const listItem = document.createElement('li');
+				const link = document.createElement('a');
+				const encodedFilename = encodeURIComponent(filename); // Encode filename
+				link.href = `/api/view/${encodedFilename}`;
+				link.textContent = filename;
+				listItem.appendChild(link);
+				fileList.appendChild(listItem);
+			});
 		}
 	</script>
 </body>
