@@ -117,7 +117,7 @@
 		<input type="file" id="fileInput" class="file-input" style="display: none;" multiple>
 	
 		<div class="progress" id="progressBarContainer" style="display: none;">
-			<div class="progress-bar" id="progressBar">0%</div>
+			<div class="progress-bar" id="progressBar"></div>
 		</div>
 		<ul id="fileList">
 		</ul>
