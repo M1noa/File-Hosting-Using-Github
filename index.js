@@ -100,26 +100,6 @@ app.get('/api/view/:filename', async (req, res) => {
 	}
 });
 
-app.get('/api/files', async (req, res) => {
-	try {
-		const response = await octokit.rest.repos.getContent({
-			owner: 'M1noa',
-			repo: 'files'
-		});
-
-		const files = response.data.map(file => {
-			return {
-				name: file.name
-			};
-		});
-
-		res.json(files);
-	} catch (error) {
-		console.error('Error fetching files from GitHub:', error);
-		res.status(500).send('An error occurred');
-	}
-});
-
 
 app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/index.html');
