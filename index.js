@@ -12,8 +12,8 @@ const octokit = new Octokit({ auth: process.env.GITHUB_API_KEY });
 // Multer configuration
 const storage = multer.memoryStorage();
 const upload = multer({
-	storage: storage,
-	limits: {}
+    storage: storage,
+    limits: {}
 });
 
 // Upload API endpoint
@@ -26,18 +26,28 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         return res.status(400).send('File size exceeds limit (100MB).');
     }
 
-    const randomFilename = crypto.randomBytes(10).toString('hex'); // Generate random filename
+    const randomFolderName = crypto.randomBytes(10).toString('hex'); // Generate random folder name
+    const folderPath = `uploads/${randomFolderName}`; // Folder path
     const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
-    const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
-    const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
+    const sanitizedFilename = `${randomFolderName}.${fileExtension}`; // Combine random string and extension
+    const encodedFilename = encodeURIComponent(req.file.originalname); // Encode filename
 
     try {
+        // Check if folder already exists, if not, create it
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath);
+        }
+
+        const filePath = `${folderPath}/${sanitizedFilename}`;
+
+        fs.writeFileSync(filePath, req.file.buffer); // Write file to folder
+
         let requestOptions = {
             owner: 'M1noa',
             repo: 'files',
-            path: sanitizedFilename, // Use sanitized filename
+            path: `${randomFolderName}/${sanitizedFilename}`, // Use folder name as part of path
             message: 'Upload file',
-            content: req.file.buffer.toString('base64')
+            content: fs.readFileSync(filePath, { encoding: 'base64' }) // Read file from disk
         };
 
         if (req.file.size > 100000) {
