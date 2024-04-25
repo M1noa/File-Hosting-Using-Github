@@ -26,28 +26,19 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         return res.status(400).send('File size exceeds limit (100MB).');
     }
 
-    const randomFolderName = crypto.randomBytes(10).toString('hex'); // Generate random folder name
-    const folderPath = `uploads/${randomFolderName}`; // Folder path
+    const randomFolderName = crypto.randomBytes(3).toString('hex'); // Generate random folder name
+    const randomFilename = crypto.randomBytes(6).toString('hex'); // Generate random filename
     const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
-    const sanitizedFilename = `${randomFolderName}.${fileExtension}`; // Combine random string and extension
-    const encodedFilename = encodeURIComponent(req.file.originalname); // Encode filename
+    const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
+    const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
 
     try {
-        // Check if folder already exists, if not, create it
-        if (!fs.existsSync(folderPath)) {
-            fs.mkdirSync(folderPath);
-        }
-
-        const filePath = `${folderPath}/${sanitizedFilename}`;
-
-        fs.writeFileSync(filePath, req.file.buffer); // Write file to folder
-
         let requestOptions = {
             owner: 'M1noa',
             repo: 'files',
-            path: `${randomFolderName}/${sanitizedFilename}`, // Use folder name as part of path
+            path: randomFolderName + '/' + sanitizedFilename, // Use folder name and sanitized filename
             message: 'Upload file',
-            content: fs.readFileSync(filePath, { encoding: 'base64' }) // Read file from disk
+            content: req.file.buffer.toString('base64')
         };
 
         if (req.file.size > 100000) {
@@ -66,49 +57,49 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 });
 
 app.get('/api/view/:filename', async (req, res) => {
-	const filename = req.params.filename;
+    const filename = req.params.filename;
 
-	try {
-		// Fetch the raw URL of the file from GitHub
-		const response = await octokit.repos.getContent({
-			owner: 'M1noa',
-			repo: 'files',
-			path: filename
-		});
+    try {
+        // Fetch the raw URL of the file from GitHub
+        const response = await octokit.repos.getContent({
+            owner: 'M1noa',
+            repo: 'files',
+            path: filename
+        });
 
-		// Ensure the file is a file and not a directory
-		if (response.data.type !== 'file') {
-			return res.status(400).send('Specified path is not a file.');
-		}
+        // Ensure the file is a file and not a directory
+        if (response.data.type !== 'file') {
+            return res.status(400).send('Specified path is not a file.');
+        }
 
-		const rawUrl = response.data.download_url;
+        const rawUrl = response.data.download_url;
 
-		// Fetch the raw file contents
-		const rawResponse = await axios.get(rawUrl, {
-			responseType: 'arraybuffer'
-		});
+        // Fetch the raw file contents
+        const rawResponse = await axios.get(rawUrl, {
+            responseType: 'arraybuffer'
+        });
 
-		// Set the appropriate content type
-		const contentType = response.data.type;
+        // Set the appropriate content type
+        const contentType = response.data.type;
 
-		// Send the raw file contents
-		res.set('Content-Type', contentType);
-		res.send(rawResponse.data);
-	} catch (error) {
-		console.error('Error fetching file from GitHub:', error);
-		res.status(500).send('An error occurred');
-	}
+        // Send the raw file contents
+        res.set('Content-Type', contentType);
+        res.send(rawResponse.data);
+    } catch (error) {
+        console.error('Error fetching file from GitHub:', error);
+        res.status(500).send('An error occurred');
+    }
 });
 
 
 app.get('/', (req, res) => {
-	res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/index.html');
 });
 app.get('/favicon.ico', (req, res) => {
-	res.sendFile(__dirname + '/favicon.ico');
+    res.sendFile(__dirname + '/favicon.ico');
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
