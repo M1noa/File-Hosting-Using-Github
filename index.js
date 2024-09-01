@@ -70,14 +70,15 @@ app.post('/api/upload/letter', upload.single('file'), async (req, res) => {
 
     const randomFilename = crypto.randomBytes(6).toString('hex'); // Generate random filename
     const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
-    const sanitizedFilename = 'letters/' + randomFilename + '.' + fileExtension; // Combine random string and extension
+    const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
     const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
+    const letterFilename = 'letters/' + sanitizedFilename; // Combine random string and extension
 
     try {
         let requestOptions = {
             owner: 'M1noa',
             repo: 'files',
-            path: sanitizedFilename, // Use sanitized filename
+            path: letterFilename, // Use sanitized filename
             message: 'Upload file',
             content: req.file.buffer.toString('base64')
         };
