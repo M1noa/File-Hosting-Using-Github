@@ -59,7 +59,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 });
 
 // Upload Letters API endpoint
-app.post('/api/upload/letters', upload.single('file'), async (req, res) => {
+app.post('/api/upload/letter', upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
