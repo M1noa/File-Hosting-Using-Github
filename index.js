@@ -25,11 +25,11 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         return res.status(400).send('No file uploaded.');
     }
 
-    if (req.file.size > 100 * 1024 * 1024) { // Check if file size exceeds 100MB
-        return res.status(400).send('File size exceeds limit (100MB).');
+    if (req.file.size > 10 * 1024 * 1024) { // Check if file size exceeds 100MB
+        return res.status(400).send('File size exceeds limit (10MB).');
     }
 
-    const randomFilename = crypto.randomBytes(10).toString('hex'); // Generate random filename
+    const randomFilename = crypto.randomBytes(6).toString('hex'); // Generate random filename
     const fileExtension = req.file.originalname.split('.').pop(); // Extract file extension
     const sanitizedFilename = randomFilename + '.' + fileExtension; // Combine random string and extension
     const encodedFilename = encodeURIComponent(sanitizedFilename); // Encode filename
