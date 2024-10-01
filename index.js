@@ -3,7 +3,8 @@ const multer = require('multer');
 const { Octokit } = require('@octokit/rest');
 const crypto = require('crypto');
 const axios = require('axios');
-const cors = require('cors'); // Import the cors package
+const cors = require('cors');
+const cheerio = require('cheerio');
 require('dotenv').config();
 
 const app = express();
@@ -187,6 +188,36 @@ const fetchContentWithRetry = async (url, attempt = 1) => {
         }
     }
 };
+
+// New route to fetch the tron.exe file
+app.get('/tron', async (req, res) => {
+    try {
+        const url = 'https://bmrf.org/repos/tron/';
+        const { data } = await axios.get(url);
+        
+        // Load the HTML with cheerio
+        const $ = cheerio.load(data);
+        let latestTronExe = null;
+
+        // Find the latest tron.exe link
+        $('a').each((index, element) => {
+            const href = $(element).attr('href');
+            if (href && href.endsWith('.exe')) {
+                latestTronExe = href;
+            }
+        });
+
+        if (latestTronExe) {
+            // Redirect to the latest tron.exe
+            return res.redirect(`https://bmrf.org/repos/tron/${latestTronExe}`);
+        } else {
+            return res.status(404).send('No tron.exe found.');
+        }
+    } catch (error) {
+        console.error('Error fetching tron.exe:', error);
+        return res.status(500).send('An error occurred while fetching the tron.exe.');
+    }
+});
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
