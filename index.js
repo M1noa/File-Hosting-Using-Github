@@ -208,7 +208,6 @@ app.get('/tron', async (req, res) => {
         });
 
         if (latestTronExe) {
-            // Redirect to the latest tron.exe
             return res.redirect(`https://bmrf.org/repos/tron/${latestTronExe}`);
         } else {
             return res.status(404).send('No tron.exe found.');
