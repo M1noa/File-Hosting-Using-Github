@@ -1,18 +1,19 @@
 {
-  "name": "nodejs",
-  "version": "1.0.0",
-  "description": "",
+  "name": "github-file-hosting",
+  "version": "1.4.0",
+  "description": "host ur files on github",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "M1noa",
   "license": "ISC",
   "dependencies": {
     "@octokit/rest": "^20.1.0",
     "@types/node": "^18.0.6",
     "axios": "^1.6.8",
+    "cheerio": "^1.0.0-rc.12",  // Add cheerio here
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "cors": "^2.8.5",
