@@ -20,6 +20,20 @@ const upload = multer({
     limits: {}
 });
 
+// Route to handle base64 conversion
+app.get('/b64/data:image/png;base64,*', (req, res) => {
+  // Extract the base64 string from the URL
+  const base64Data = req.url.split(',')[1]; // Remove the prefix 'data:image/png;base64,'
+  
+  // Decode the base64 string into a buffer
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  // Set the content type as an image and send the buffer as the response
+  res.setHeader('Content-Type', 'image/png');
+  res.send(buffer);
+});
+
+
 // Upload API endpoint
 app.post('/api/upload', upload.single('file'), async (req, res) => {
     if (!req.file) {
